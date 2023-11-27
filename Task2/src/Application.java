@@ -1,10 +1,11 @@
 import javax.swing.*;
 
 public class Application {
+    private static Window application;
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
-            Window window = new Window();
-            window.setVisible(true);
+            application = new Window();
+            application.setVisible(true);
         });
     }
 }
