@@ -19,8 +19,8 @@ public class Application {
      */
     public Application() {
         paintFrameInitialization();
-        buttonPanelInitialization();
         drawPanelInitialization();
+        buttonPanelInitialization();
         addComponentsToFrame();
         displayApplication();
     }
@@ -33,7 +33,6 @@ public class Application {
         paintFrame.setTitle("Drawing Interface");
         paintFrame.setSize(500, 500);
         paintFrame.setResizable(false);
-        paintFrame.setBackground(Color.GRAY);
         paintFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
     }
 
@@ -42,7 +41,7 @@ public class Application {
      */
     private void addComponentsToFrame() {
         paintFrame.add(buttonPanel, BorderLayout.EAST);
-        paintFrame.add(drawPanel, BorderLayout.WEST);
+        paintFrame.add(drawPanel, BorderLayout.CENTER);
     }
 
     /**
@@ -53,6 +52,9 @@ public class Application {
 
     }
 
+    /**
+     * Method initialize default buttonPanel. Method is setting the size of panel, layout, visibility and generate buttons for panel.
+     */
     private void buttonPanelInitialization() {
         buttonPanel.setPreferredSize(new Dimension(paintFrame.getWidth()/mutualPanelSizes, paintFrame.getHeight()));
         buttonPanel.setLayout(new GridLayout(0,1));
@@ -61,6 +63,12 @@ public class Application {
         buttonPanel.setVisible(true);
     }
 
+    /**
+     * Method is creating buttons based on buttonNumber passed as argument. Every button has the same size. After visual implementation also action listener is
+     * set for a button.
+     * @param buttonNumber - number defining what type of button it is
+     * @return Method is returning adres in memory of the button.
+     */
     private JButton generateButtons(int buttonNumber) {
         JButton button = new JButton();
         button.setPreferredSize(new Dimension(buttonPanel.getWidth(), buttonPanel.getHeight()));
@@ -77,32 +85,21 @@ public class Application {
         return button;
     }
     private void addListener(JButton button) {
+        drawPanel.setDrawMode(true);
         button.addActionListener(e -> {
             switch (button.getText()) {
-                case "Rectangle" -> {
-                    drawPanel.setDrawMode(true);
-                }
-                case "Circle" -> {
-                    drawPanel.setDrawMode(true);
-                }
+                case "Rectangle" -> drawPanel.setWantedShape(ButtonConst.RECTANGLE);
+                case "Circle" -> drawPanel.setWantedShape(ButtonConst.CIRCLE);
+                case "Ellipse" -> drawPanel.setWantedShape(ButtonConst.ELLIPSE);
+                case "Select" -> drawPanel.setDrawMode(false);
+                case "Clear drawing board" -> drawPanelInitialization();
             }
         });
     }
 
     private void drawPanelInitialization() {
         drawPanel = new DrawPanel(paintFrame.getWidth()/mutualPanelSizes * 4, paintFrame.getHeight());
-    }
 
-
-
-    private static class ButtonConst {
-        private static final int RECTANGLE = 0;
-        private static final int CIRCLE = 1;
-        private static final int LINE = 2;
-        private static final int ELLIPSE = 3;
-        private static final int SELECT = 4;
-        private static final int CLEAR = 5;
-        private static final int NUMBER_OF_BUTTONS = 6;
     }
 
 }
