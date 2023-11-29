@@ -1,50 +1,57 @@
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.awt.event.MouseMotionListener;
+import java.awt.event.*;
 import java.awt.geom.Ellipse2D;
+import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 
-public class DrawPanel extends JPanel implements MouseListener, MouseMotionListener {
-    private int wantedShape = 6;
+import static java.awt.event.KeyEvent.VK_UP;
 
+public class DrawPanel extends JPanel implements MouseListener, MouseMotionListener {
+    private int actionType = 6;
     private Shape currentShape ;
     private ArrayList<Shape> shapeList = new ArrayList<>();
-    private boolean drawMode = false;
-
+    private boolean drawMode = false, selectMode = false;
     private Point2D startPoint, endPoint;
 
     public DrawPanel(int width, int height) {
+        setFocusable(true);
+        requestFocus();
         setPreferredSize(new Dimension(width, height));
         setBorder(BorderFactory.createLineBorder(Color.black, 4, false));
         setBackground(Color.white);
         addMouseListener(this);
         addMouseMotionListener(this);
+        addKeyboardListener();
         setVisible(true);
     }
+
     @Override
     protected void paintComponent(Graphics g) {
         Graphics2D graphics = (Graphics2D) g;
-        if (wantedShape >= 0 && wantedShape <= 5) {
+        if (actionType >= 0 && actionType <= 4) {
             determineShapeToDraw();
             graphics.draw(currentShape);
         }
     }
-
     private void determineShapeToDraw() {
-        switch (wantedShape) {
+        switch (actionType) {
             case ButtonConst.RECTANGLE -> currentShape = new Rectangle2D.Double(startPoint.getX(), startPoint.getY(), endPoint.getX() - startPoint.getX(), endPoint.getY() - startPoint.getY());
             case ButtonConst.CIRCLE -> currentShape = new Ellipse2D.Double(startPoint.getX(), startPoint.getY(), endPoint.getX() - startPoint.getX(), endPoint.getX() - startPoint.getX());
+            case ButtonConst.LINE -> {}
             case ButtonConst.ELLIPSE -> currentShape = new Ellipse2D.Double(startPoint.getX(), startPoint.getY(), endPoint.getX() - startPoint.getX(), endPoint.getY() - startPoint.getY());
+            case ButtonConst.SELECT -> {
+
+            }
             default ->  currentShape = null;
         }
-        if (currentShape != null)
-            shapeList.add(currentShape);
-
+        shapeList.add(currentShape);
     }
+
+
+
     @Override
     public void mouseClicked(MouseEvent e) {
 
@@ -60,6 +67,14 @@ public class DrawPanel extends JPanel implements MouseListener, MouseMotionListe
         endPoint = e.getPoint();
         if (isDrawMode())
             paintComponent(getGraphics());
+        else if (isSelectMode())
+            selectComponent();
+
+    }
+    private void selectComponent() {
+        for (Shape shape : shapeList)
+            if(shape.contains(startPoint))
+                currentShape = shape;
     }
 
     @Override
@@ -74,7 +89,12 @@ public class DrawPanel extends JPanel implements MouseListener, MouseMotionListe
 
     @Override
     public void mouseDragged(MouseEvent e) {
-
+        if (!isDrawMode() && e.getPoint().getX() < this.getWidth()) {
+            actionType = ButtonConst.LINE;
+            currentShape = new Line2D.Double(startPoint, e.getPoint());
+            startPoint = e.getPoint();
+            paintComponent(getGraphics());
+        }
     }
 
     @Override
@@ -106,11 +126,31 @@ public class DrawPanel extends JPanel implements MouseListener, MouseMotionListe
         this.drawMode = drawMode;
     }
 
-    public int getWantedShape() {
-        return wantedShape;
+    public int getActionType() {
+        return actionType;
     }
 
-    public void setWantedShape(int shape) {
-        this.wantedShape = shape;
+    public void setActionType(int shape) {
+        this.actionType = shape;
+    }
+
+    public boolean isSelectMode() {
+        return selectMode;
+    }
+
+    public void setSelectMode(boolean selectMode) {
+        this.selectMode = selectMode;
+    }
+
+    private void addKeyboardListener() {
+        addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                super.keyPressed(e);
+                switch (e.getKeyCode()) {
+                    case VK_UP -> System.out.println("no spoko");
+                }
+            }
+        });
     }
 }

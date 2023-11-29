@@ -1,6 +1,5 @@
 import javax.swing.*;
 import java.awt.*;
-import java.util.ArrayList;
 
 public class Application {
     private final static int mutualPanelSizes = 5;
@@ -37,19 +36,10 @@ public class Application {
     }
 
     /**
-     * Method invokes adding every single component to application frame.
+     * Initialization of drawPanel. Initialization involves calling the constructor of DrawPanel class.
      */
-    private void addComponentsToFrame() {
-        paintFrame.add(buttonPanel, BorderLayout.EAST);
-        paintFrame.add(drawPanel, BorderLayout.CENTER);
-    }
-
-    /**
-     * Method sets visibility of frame to true. Tantamount to displaying application to the user.
-     */
-    private void displayApplication() {
-        paintFrame.setVisible(true);
-
+    private void drawPanelInitialization() {
+        drawPanel = new DrawPanel(paintFrame.getWidth()/mutualPanelSizes * 4, paintFrame.getHeight());
     }
 
     /**
@@ -78,27 +68,49 @@ public class Application {
             case ButtonConst.LINE -> button.setText("Line");
             case ButtonConst.ELLIPSE -> button.setText("Ellipse");
             case ButtonConst.SELECT -> button.setText("Select");
-            case ButtonConst.CLEAR -> button.setText("Clear drawing board");
         }
-        addListener(button);
+        addButtonListener(button);
         button.setVisible(true);
         return button;
     }
-    private void addListener(JButton button) {
-        drawPanel.setDrawMode(true);
+
+    /**
+     * Adding action listener for every button in buttonPanel. The action send to drawPanel is determined based on the text that is on the button.
+     * @param button - instance of button class whose listener is set at the moment
+     */
+    private void addButtonListener(JButton button) {
         button.addActionListener(e -> {
+            drawPanel.setDrawMode(true);
             switch (button.getText()) {
-                case "Rectangle" -> drawPanel.setWantedShape(ButtonConst.RECTANGLE);
-                case "Circle" -> drawPanel.setWantedShape(ButtonConst.CIRCLE);
-                case "Ellipse" -> drawPanel.setWantedShape(ButtonConst.ELLIPSE);
-                case "Select" -> drawPanel.setDrawMode(false);
-                case "Clear drawing board" -> drawPanelInitialization();
+                case "Rectangle" -> drawPanel.setActionType(ButtonConst.RECTANGLE);
+                case "Circle" -> drawPanel.setActionType(ButtonConst.CIRCLE);
+                case "Line" -> {
+                    drawPanel.setActionType(ButtonConst.LINE);
+                    drawPanel.setDrawMode(false);
+                }
+                case "Ellipse" -> drawPanel.setActionType(ButtonConst.ELLIPSE);
+                case "Select" -> {
+                    drawPanel.setActionType(ButtonConst.SELECT);
+                    drawPanel.setDrawMode(false);
+                    drawPanel.setSelectMode(true);
+                }
             }
         });
     }
 
-    private void drawPanelInitialization() {
-        drawPanel = new DrawPanel(paintFrame.getWidth()/mutualPanelSizes * 4, paintFrame.getHeight());
+    /**
+     * Method invokes adding every single component to application frame.
+     */
+    private void addComponentsToFrame() {
+        paintFrame.add(buttonPanel, BorderLayout.EAST);
+        paintFrame.add(drawPanel, BorderLayout.CENTER);
+    }
+
+    /**
+     * Method sets visibility of frame to true. Tantamount to displaying application to the user.
+     */
+    private void displayApplication() {
+        paintFrame.setVisible(true);
 
     }
 
