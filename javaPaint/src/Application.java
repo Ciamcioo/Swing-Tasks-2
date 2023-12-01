@@ -9,7 +9,8 @@ public class Application {
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
-            new Application();
+            Application app = new Application();
+
         });
     }
 
@@ -82,21 +83,24 @@ public class Application {
         button.addActionListener(e -> {
             drawPanel.setDrawMode(true);
             switch (button.getText()) {
-                case "Rectangle" -> drawPanel.setActionType(ButtonConst.RECTANGLE);
-                case "Circle" -> drawPanel.setActionType(ButtonConst.CIRCLE);
+                case "Rectangle" -> drawPanel.setFigureType(ButtonConst.RECTANGLE);
+                case "Circle" -> drawPanel.setFigureType(ButtonConst.CIRCLE);
                 case "Line" -> {
-                    drawPanel.setActionType(ButtonConst.LINE);
                     drawPanel.setDrawMode(false);
+                    drawPanel.setFigureType(ButtonConst.LINE);
                 }
-                case "Ellipse" -> drawPanel.setActionType(ButtonConst.ELLIPSE);
+                case "Ellipse" -> drawPanel.setFigureType(ButtonConst.ELLIPSE);
                 case "Select" -> {
-                    drawPanel.setActionType(ButtonConst.SELECT);
                     drawPanel.setDrawMode(false);
-                    drawPanel.setSelectMode(true);
+                    drawPanel.setSelectMode();
+                    drawPanel.setFigureType(ButtonConst.SELECT);
+                    drawPanel.requestFocusInWindow();
+
                 }
             }
         });
     }
+
 
     /**
      * Method invokes adding every single component to application frame.
