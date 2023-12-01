@@ -6,15 +6,16 @@ import java.util.ArrayList;
 
 import static java.awt.event.KeyEvent.*;
 
-public class DrawPanel extends JPanel implements MouseListener, MouseMotionListener {
+public class DrawPanel extends JPanel implements MouseListener, MouseMotionListener, MouseWheelListener {
     private int figureType = 3;
-    private Shape currentShape ;
-    private final ArrayList<Shape> shapeList = new ArrayList<>();
+    private Shape currentShape;
+    private Rectangle selectionBox;
+    private final ArrayList<Shape> shapeList = new ArrayList<>(), selectedShapes = new ArrayList<>();
     private boolean drawMode = false, selectMode = false;
     private Point2D startPoint, endPoint;
 
     /**
-     * Constructor of DrawPanel class. As an arguments we pass width and height of drawPanel.
+     * Constructor of DrawPanel class. As an arguments we pass width and height of frame.
      * @param width - width of the drawPanel
      * @param height - height of the drawPanel
      */
@@ -23,16 +24,18 @@ public class DrawPanel extends JPanel implements MouseListener, MouseMotionListe
         setBackground(Color.white);
         setBorder(BorderFactory.createLineBorder(Color.black, 4, false));
         setFocusable(true);
-
-        addFocListener();
+        addFocusListener();
         addMouseListener(this);
         addMouseMotionListener(this);
+        addMouseWheelListener(this);
         addKeyboardListener();
-
         setVisible(true);
     }
 
-    private void addFocListener() {
+    /**
+     * Method sets up focusListener for drawPanel. After it regains focus it repaints the drawPanel.
+     */
+    private void addFocusListener() {
         addFocusListener(new FocusAdapter() {
             @Override
             public void focusGained(FocusEvent e) {
@@ -52,6 +55,13 @@ public class DrawPanel extends JPanel implements MouseListener, MouseMotionListe
 
         for (Shape shape : shapeList)
             graphics.draw(shape);
+
+        if (selectionBox != null) {
+            graphics.setColor(new Color(0, 0, 255, 50));
+            graphics.fill(selectionBox);
+            graphics.setColor(Color.BLUE);
+            graphics.draw(selectionBox);
+        }
     }
 
     /**
@@ -81,68 +91,189 @@ public class DrawPanel extends JPanel implements MouseListener, MouseMotionListe
         currentShape = null;
     }
 
-    private void moveShape(int deltaX, int deltaY) {
-        if (currentShape instanceof RectangularShape recShape) {
+    /**
+     * Method is checks if selectedShapes is empty.
+     * Determines vector of move for selectedShapes.
+     * Invokes move method for every shape in selectedShapes.
+     */
+    private void moveShapesInTheBox() {
+        if (selectedShapes.isEmpty())
+            return;
+        int deltaX = (int) (endPoint.getX() - startPoint.getX());
+        int deltaY = (int) (endPoint.getY() - startPoint.getY());
+        for (Shape shape : selectedShapes) {
+            moveShape(shape, deltaX, deltaY);
+        }
+    }
+
+    /**
+     * Method moves shapes based on instance of the figure. It moves the shape accordingly to the deltaX and deltaY which is basically a vector of the move.
+     * @param shape - pointer to the shape which should be moved
+     * @param deltaX - shift of the shape in axis of X's
+     * @param deltaY - shift of the shape in axis of Y's
+     */
+    private void moveShape(Shape shape, int deltaX, int deltaY) {
+        if (shape instanceof RectangularShape recShape)
             recShape.setFrame(recShape.getX() + deltaX, recShape.getY() + deltaY, recShape.getWidth(), recShape.getHeight());
-        }
-        else if (currentShape instanceof Line2D)  {
-            Line2D line = (Line2D) currentShape;
+        else if (shape instanceof Line2D line)
             line.setLine(line.getX1() + deltaX, line.getY1() + deltaY, line.getX2() + deltaX, line.getY2() + deltaY);
-        }
         else  {
             Rectangle boundOfEllipse = currentShape.getBounds();
             currentShape = new Ellipse2D.Double(boundOfEllipse.getX() + deltaX, boundOfEllipse.getY() + deltaY, boundOfEllipse.getWidth(), boundOfEllipse.getHeight());
         }
 
     }
+
+//----------------- KEYBOARD LISTENERS --------------
+
+    /**
+     * Wrapping method that will initialize keyListener for drawPanel. It invokes the handlingOfKeys(KeyEvent e) method that implements
+     * logic for keyListener
+     */
+    private void addKeyboardListener() {
+        addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent keyEvent) {
+                super.keyPressed(keyEvent);
+                if (isSelectMode())
+                    handlingOfKeys(keyEvent);
+                repaint();
+            }
+        });
+    }
+
+    /**
+     * Method that handel button press by user.
+     * @param e - event of button being pressed
+     */
+    private void  handlingOfKeys(KeyEvent e) {
+        switch (e.getKeyCode()) {
+            case VK_UP -> moveShape(currentShape,0,-5);
+            case VK_DOWN -> moveShape(currentShape,0, 5);
+            case VK_RIGHT -> moveShape(currentShape, 5,0);
+            case VK_LEFT -> moveShape(currentShape,-5, 0);
+            default -> System.out.println("Unsupported key was pressed");
+        }
+    }
+
+//----------------- MOUSE LISTENERS -------------------
+
+    /**
+     * Listener for mouse click. If selectMode is true we check if the point of the click is inside any of the shapes.
+     * @param e the event to be processed
+     */
     @Override
     public void mouseClicked(MouseEvent e) {
         if (isSelectMode()) {
             selectShape(e.getX(), e.getY());
             requestFocusInWindow();
         }
-
     }
 
+    /**
+     * Method prints to the console information about the fact that mouse button is pressed.
+     * On this event also we take to point of the mouse press as starting point for possible future shape.
+     * If the select mode is on it starts to create rectangle of selection box.
+     * @param e the event to be processed
+     */
     @Override
     public void mousePressed(MouseEvent e) {
+        System.out.println("Mouse button is pressed");
         startPoint = e.getPoint();
+        if (isSelectMode()) {
+            selectionBox = new Rectangle((Point) startPoint);
+            selectedShapes.clear();
+        }
     }
 
+    /**
+     *
+     * @param e the event to be processed
+     */
     @Override
     public void mouseReleased(MouseEvent e) {
+        System.out.println("Mouse Released");
         endPoint = e.getPoint();
         if (isDrawMode()) {
             determineShapeToDraw();
-            repaint();
         }
+        else if (isSelectMode()) {
+            moveShapesInTheBox();
+            selectionBox = null;
+            selectedShapes.clear();
+        }
+        repaint();
     }
 
+    /**
+     * Whenever e event happens to the console it's printed that we have entered DrawPanel.
+     * @param e the event to be processed
+     */
     @Override
     public void mouseEntered(MouseEvent e) {
-
+        System.out.println("Entered DrawPanel");
     }
 
+    /**
+     * Whenever e event happens to the console it's printed that we have left DrawPanel.
+     * @param e the event to be processed
+     */
     @Override
     public void mouseExited(MouseEvent e) {
-
+        System.out.println("Exited DrawPanel");
     }
 
     @Override
+    public void mouseMoved(MouseEvent e) {}
+
+    /**
+     *
+     * @param e the event to be processed
+     */
+    @Override
     public void mouseDragged(MouseEvent e) {
-        if (!isDrawMode() && e.getPoint().getX() < this.getWidth()) {
+        if (isSelectMode()) {
+            Point endPoint = e.getPoint();
+            selectionBox.setBounds(
+                    (int) Math.min(startPoint.getX(), endPoint.getX()),
+                    (int) Math.min(startPoint.getY(), endPoint.getY()),
+                    (int) Math.abs(endPoint.getX() - startPoint.getX()),
+                    (int) Math.abs(endPoint.getY() - startPoint.getY())
+            );
+            selectedShapes.clear();
+            for (Shape shape : shapeList) {
+                if (selectionBox.intersects(shape.getBounds()))
+                    selectedShapes.add(shape);
+            }
+        }
+        else if (!isDrawMode() && e.getPoint().getX() < this.getWidth()) {
             endPoint = e.getPoint();
             figureType = ButtonConst.LINE;
             determineShapeToDraw();
-            repaint();
             startPoint = endPoint;
         }
+        repaint();
     }
 
+    /**
+     * Method is implementing the behavior whenever position of mouse roll is changed if the selectMode is true.
+     * Changed position of mouse roll influence the size of the shape that is selected
+     * @param e the event to be processed
+     */
     @Override
-    public void mouseMoved(MouseEvent e) {
-
+    public void mouseWheelMoved(MouseWheelEvent e) {
+        int rotation = e.getWheelRotation();
+        if (isSelectMode()) {
+            if (currentShape instanceof RectangularShape recShape)
+                recShape.setFrame(recShape.getX(), recShape.getY(), recShape.getWidth() + rotation, recShape.getHeight() + rotation);
+            else  {
+                Rectangle boundOfEllipse = currentShape.getBounds();
+                currentShape = new Ellipse2D.Double(boundOfEllipse.getX(), boundOfEllipse.getY(), boundOfEllipse.getWidth() + rotation, boundOfEllipse.getHeight() + rotation);
+            }
+        }
+        repaint();
     }
+//----------------- GETTERS AND SETTERS -------------
 
     public boolean isDrawMode() {
         return drawMode;
@@ -169,35 +300,7 @@ public class DrawPanel extends JPanel implements MouseListener, MouseMotionListe
             requestFocusInWindow();
         repaint();
     }
-
-    /**
-     * Wrapping method that will initialize keyListener for drawPanel
-     */
-    private void addKeyboardListener() {
-        addKeyListener(new KeyAdapter() {
-            @Override
-            public void keyPressed(KeyEvent keyEvent) {
-                super.keyPressed(keyEvent);
-                if (selectMode)
-                    handlingOfKeys(keyEvent);
-                repaint();
-            }
-        });
-    }
-
-    /**
-     * Method that handel button press by user.
-     * @param e - event of button being pressed
-     */
-    private void  handlingOfKeys(KeyEvent e) {
-        switch (e.getKeyCode()) {
-            case VK_UP -> moveShape(0,-5);
-            case VK_DOWN -> moveShape(0, 5);
-            case VK_RIGHT -> moveShape(5,0);
-            case VK_LEFT -> moveShape(-5, 0);
-            default -> System.out.println("Unsupported key was pressed");
-        }
-    }
+//-------------------------------------------------
 }
 
 

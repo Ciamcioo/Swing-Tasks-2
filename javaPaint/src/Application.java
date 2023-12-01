@@ -8,10 +8,7 @@ public class Application {
     private DrawPanel drawPanel;
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            Application app = new Application();
-
-        });
+        SwingUtilities.invokeLater(() -> new Application());
     }
 
     /**
@@ -94,13 +91,10 @@ public class Application {
                     drawPanel.setDrawMode(false);
                     drawPanel.setSelectMode();
                     drawPanel.setFigureType(ButtonConst.SELECT);
-                    drawPanel.requestFocusInWindow();
-
                 }
             }
         });
     }
-
 
     /**
      * Method invokes adding every single component to application frame.
